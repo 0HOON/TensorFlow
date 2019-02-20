@@ -1,4 +1,4 @@
-#AlexNet for CIFAR-10
+#AlexNet for CIFAR-10 by 0HOON
 import tensorflow as tf
 import numpy as np
 
@@ -24,6 +24,7 @@ class Model:
         self._build_net()
     
     def _build_net(self):
+        #build AlexNet
         with tf.variable_scope(self.name):
             self.X = tf.placeholder(tf.float32, [None, 3072])
             X_img = tf.reshape(self.X, [-1, 3, 32, 32])
@@ -62,14 +63,17 @@ class Model:
             self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     def predict(self, x_test):
+        #get prediction of a model
         self.training = False
         return self.sess.run(self.hypothesis, feed_dict = {self.X: x_test})
 
     def getAccuracy(self, x_test, y_test):
+        #get accuracy of a model
         self.training = False
         return self.sess.run(self.accuracy, feed_dict = {self.X: x_test, self.Y: y_test})
     
     def train(self, x_train, y_train):
+        #train a model
         self.training = True
         return self.sess.run([self.cost, self.optimizer], feed_dict = {self.X: x_train, self.Y: y_train})
 
@@ -77,6 +81,7 @@ class Model:
 
 sess = tf.Session()
 
+#add models
 models = []
 for i in range(num_models):
     models.append(Model(sess,'model'+str(i)))
@@ -88,10 +93,12 @@ for epoch in range(training_epochs):
     avg_cost = np.zeros(len(models))
 
     for i in range(total_batch):
+        #unpickle a batch
         batch = unpickle('cifar-10-batches-py/data_batch_'+str(i+1))
 
         for k in range(int(10000/batch_size)):       
-            x_training = batch[b'data'][k*batch_size: (k+1)*batch_size]            
+            x_training = batch[b'data'][k*batch_size: (k+1)*batch_size]   
+            #one-hot encoding          
             y_training = np.zeros((batch_size,10))
             y_training[np.arange(batch_size), batch[b'labels'][k*batch_size: (k+1)*batch_size]] = 1    
                
@@ -111,7 +118,8 @@ ensemble_accuracy = 0
 
 for k in range(int(10000/batch_size)):     
     predictions = np.zeros(100 * 10).reshape(100, 10)  
-    x_test = test_batch[b'data'][k*batch_size: (k+1)*batch_size]            
+    x_test = test_batch[b'data'][k*batch_size: (k+1)*batch_size]     
+    #one-hot encoding       
     y_test = np.zeros((batch_size,10))
     y_test[np.arange(batch_size), test_batch[b'labels'][k*batch_size: (k+1)*batch_size]] = 1    
         
@@ -119,7 +127,7 @@ for k in range(int(10000/batch_size)):
         print(m_index, 'Accuracy: ',m.getAccuracy(x_test, y_test))
         p = m.predict(x_test)
         predictions += p
-
+    #calculate ensemble accuracy
     ensemble_correct_prediction =  tf.equal(tf.argmax(predictions, 1), tf.argmax(y_test, 1))
     ensemble_accuracy += sess.run(tf.reduce_mean(tf.cast(ensemble_correct_prediction, tf.float32))/100)
 print("Ensemble Accuracy: ", ensemble_accuracy)
